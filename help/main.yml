@@ -1,0 +1,44 @@
+help:
+  short: "help / help <topic>."
+  long:
+    - "help provides a list of available commands"
+    - "help <topic> will provide more detailed information" 
+watch:
+  short: "Check your watch"
+  long:
+    - "Look at your watch and see the current game time"
+    - "Game time is sped up by 4x compared to real time"
+say:
+  short: "say <message>"
+  long:
+    - "The say command will display your message to the room you are currently occupying. "
+emote:
+  short: "emote <message>"
+  long:
+    - "Send a custom action message to the room. You can use special tags to template information into your message"
+    - "<me>     - Displays you/yourname"
+    - "<myself> - Displays yourself/himself/herself (TODO)"
+look:
+  short: "look around"
+  long:
+    - "Look          - at your current surroundings"
+    - "Look <target> - at a specific target (TODO)"
+go:
+  short: "go <exit>"
+  long:
+    - "Move to the room through the specified exit"
+score:
+  short: "score card "
+  long:
+    - "Display your character's score card. Each stat will directly affect both long and short term gameplay"
+    - "Weight        - your weight in lbs. This could affect a number of fitness/strength related things"
+    - "Height        - your eight in inches. Alone this probably won't mean much, but balancing it with weight will be important"
+    - "Understanding - (TODO)"
+    - "Courage       - (TODO)"
+    - "Diligence     - (TODO)"
+    - "Knowledge     - (TODO)"
+    - "Expression    - (TODO)"
+quit:
+  short: "quit the game"
+  long:
+    - "Quitting the game currently disconnect you and looses you character. Soon your character will be saved and this won't matter (TODO)"

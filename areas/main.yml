@@ -1,0 +1,10 @@
+1:
+  name: Start
+  description: This is the starting room. You feel uneasy here. There is a door.
+  exits:
+    outside: 2
+2:
+  name: Outside
+  description: The sun shines brightly. You feel much more comfortable. 
+  exits:
+    inside: 1
