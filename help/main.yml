@@ -7,7 +7,7 @@ watch:
   short: "Check your watch"
   long:
     - "Look at your watch and see the current game time"
-    - "Game time is sped up by 4x compared to real time"
+    - "Game time is sped up by 5x compared to real time"
 say:
   short: "say <message>"
   long:

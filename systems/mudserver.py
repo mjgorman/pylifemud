@@ -9,10 +9,11 @@ author: Mark Frimston - mfrimston@gmail.com
 
 
 import socket
+import yaml
 from select import select
 from sys import version
 from time import time
-from systems.watch import Watch
+from datetime import datetime, timedelta
 
 class MudServer(object):    
     """    
@@ -81,7 +82,11 @@ class MudServer(object):
         self._events = []
         self._new_events = []
         self.players = {}
-        self.atomic_clock = Watch()
+        try:
+            with open('save/mud.time', 'r') as mudtime:
+                self.mudtime = yaml.load(mudtime.read())
+        except:
+            self.mudtime = datetime(1,1,1)
         
         # create a new tcp socket which will be used to listen for new clients
         self._listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -122,8 +127,9 @@ class MudServer(object):
         # previous events are discarded
         self._events = list(self._new_events)
         self._new_events = []
-        self.atomic_clock.update()
-
+        self.mudtime = self.mudtime + timedelta(seconds=1)
+        with open('save/mud.time', 'w') as mudtime:
+            yaml.dump(self.mudtime, mudtime, default_flow_style=True)
         
     def get_new_players(self):
         """    

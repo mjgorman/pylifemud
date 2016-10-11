@@ -1,4 +1,5 @@
 import textwrap
+import yaml
 from areas import rooms
 from help import help_files
 
@@ -14,11 +15,11 @@ def execute_command(mud, id, command, params):
         "emote": cmd_emote,
         "quit": cmd_quit,
         "watch": cmd_watch,
+        "save": cmd_save,
     }
     if command in commands:
         commands[command](mud, id, params)
     else:
-       #send back an 'unknown command' message
        mud.send_message(id, "Unknown command '{0}'".format(command))
     mud.send_prompt(id)
        
@@ -36,11 +37,20 @@ def cmd_help(mud, id, params):
                mud.send_message(id, "{0}".format(textwrap.fill(line, 75)))
            mud.send_message(id,"--------------------")
 
+def cmd_save(mud, id, params):
+    player_save = { "name": "{0}".format(mud.players[id]["player"].name),
+                    "password": "{0}".format(mud.players[id]["player"].password)
+                  }
+    with open('save/{0}'.format(mud.players[id]["player"]), 'w') as player:
+        yaml.dump(player_save, player, default_flow_style=False)
+    mud.send_message(id, "Saved..")
+
 def cmd_watch(mud, id, params):
-    mud.send_message(id,"{0}".format(mud.atomic_clock))
+    mud.send_message(id,"{0}".format(mud.mudtime.ctime()))
 
 def cmd_quit(mud, id, params):
     mud.send_message(id,"Thanks for playing. Come back soon.")
+    cmd_save(mud, id, params)
     mud._clients[id].socket.close()
     
 def cmd_score(mud, id, params):
@@ -97,7 +107,7 @@ def cmd_go(mud, id, params):
         for pid,pl in mud.players.items():
             if mud.players[pid]["room"] == mud.players[id]["room"] and pid!=id:
                 mud.send_message(pid,"{0} left via exit '{1}'".format(
-                    str(mud.players[pid]["player"])[:1].upper() + str(mud.players[pid]["player"])[1:],
+                    str(mud.players[id]["player"])[:1].upper() + str(mud.players[id]["player"])[1:],
                     ex))
                 
         mud.players[id]["room"] = rm["exits"][ex]

@@ -1,19 +1,23 @@
+import yaml
 from time import sleep
 from systems.mudserver import MudServer
 from models import Character
 from areas import rooms
 from commands import execute_command
+from passlib.hash import sha256_crypt
 
 
 def run_server():
     mud = MudServer()
 
     while True:
-        sleep(0.25)
+        sleep(0.2)
         mud.update()
+
         for id in mud.get_new_players():
             mud.players[id] = { 
                 "player": None,
+                "state": "LOGIN",
                 "room": 1,
             }
             mud.send_message(id,"\n\n\r")
@@ -32,15 +36,39 @@ def run_server():
                 if pid is not id:
                     mud.send_message(pid,"{0} quit the game".format(
                         str(mud.players[id]["player"])[:1].upper() + str(mud.players[id]["player"])[1:]))
-                
             del(mud.players[id])
         
         for id,command,params in mud.get_commands():
             if id not in mud.players: continue
         
-            if mud.players[id]["player"] is None:
-                mud.players[id]["player"] = Character(command)
-                
+            if mud.players[id]["state"] == "ONLINE":
+                execute_command(mud, id, command, params)
+
+            elif mud.players[id]["state"] == "LOGIN":
+                try:
+                    with open("save/{0}".format(command), "r") as load_player:
+                        loaded_player = yaml.load(load_player.read())
+                        mud.players[id]["state"] = "LOGIN_PASSWORD"
+                except Exception as e:
+                    mud.players[id]["player"] = Character(command)
+                    mud.players[id]["state"] = "CREATION_PASS1"
+                finally:
+                    mud.send_message(id,"Great. what's your password? ")
+
+            elif mud.players[id]["state"] == "LOGIN_PASSWORD":
+                if sha256_crypt.verify("{0}".format(command), loaded_player["password"]):
+                    mud.players[id]["player"] = Character(loaded_player["name"])
+                    mud.players[id]["player"].password = loaded_player["password"]
+                    mud.players[id]["state"] = "ONLINE"
+                    mud.send_message(id,"Welcome back!")
+                    mud.send_message(id,rooms[mud.players[id]["room"]]["description"])
+                else:
+                    mud.send_message(id,"Incorrect Password.")
+
+            elif mud.players[id]["state"] == "CREATION_PASS1":
+                mud.players[id]["player"].password = sha256_crypt.encrypt("{0}".format(command))
+                mud.players[id]["state"] = "ONLINE"
+
                 for pid,pl in mud.players.items():
                     if pid is not id:
                         mud.send_message(pid,"\n\r{0} entered the game".format(mud.players[id]["player"]))
@@ -50,9 +78,7 @@ def run_server():
                     str(mud.players[pid]["player"])[:1].upper() + str(mud.players[pid]["player"])[1:]))
                 mud.send_message(id,rooms[mud.players[id]["room"]]["description"])
                 mud.send_prompt(id)
-            else:
-                execute_command(mud, id, command, params)
-    
+   
 
 if __name__ == "__main__":
     run_server()

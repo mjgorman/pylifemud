@@ -3,6 +3,7 @@ from random import randint
 class Character(object):
     def __init__(self, name):
         self.name = name
+        self.password = ""
         self.sex = 'Male'
         self.understanding = 0
         self.diligence = 0
