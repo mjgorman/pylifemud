@@ -5,7 +5,7 @@ from help import help_files
 
 
 def execute_command(mud, id, command, params):
-    
+
     commands = {
         "help": cmd_help,
         "score": cmd_score,
@@ -22,7 +22,7 @@ def execute_command(mud, id, command, params):
     else:
        mud.send_message(id, "Unknown command '{0}'".format(command))
     mud.send_prompt(id)
-       
+
 def cmd_help(mud, id, params):
     if not params:
         mud.send_message(id,"Commands:")
@@ -39,7 +39,15 @@ def cmd_help(mud, id, params):
 
 def cmd_save(mud, id, params):
     player_save = { "name": "{0}".format(mud.players[id]["player"].name),
-                    "password": "{0}".format(mud.players[id]["player"].password)
+                    "password": "{0}".format(mud.players[id]["player"].password),
+                    "sex": "{0}".format(mud.players[id]["player"].sex),
+                    "height": "{0}".format(mud.players[id]["player"].height),
+                    "weight": "{0}".format(mud.players[id]["player"].weight),
+                    "understanding": "{0}".format(mud.players[id]["player"].understanding),
+                    "courage": "{0}".format(mud.players[id]["player"].courage),
+                    "diligence": "{0}".format(mud.players[id]["player"].diligence),
+                    "knowledge": "{0}".format(mud.players[id]["player"].knowledge),
+                    "expression": "{0}".format(mud.players[id]["player"].expression)
                   }
     with open('save/{0}'.format(mud.players[id]["player"]), 'w') as player:
         yaml.dump(player_save, player, default_flow_style=False)
@@ -52,7 +60,7 @@ def cmd_quit(mud, id, params):
     mud.send_message(id,"Thanks for playing. Come back soon.")
     cmd_save(mud, id, params)
     mud._clients[id].socket.close()
-    
+
 def cmd_score(mud, id, params):
     mud.send_message(id,"--------------------")
     mud.send_message(id," {}".format(str(mud.players[id]["player"])[:1].upper() + str(mud.players[id]["player"])[1:]))
@@ -75,7 +83,7 @@ def cmd_say(mud, id, params):
                 mud.send_message(pid,"You say: {0}".format(params))
             else:
                 mud.send_message(pid,"{0} says: {1}".format(str(mud.players[id]["player"])[:1].upper() + str(mud.players[id]["player"])[1:],params))
-            
+
 def cmd_emote(mud, id, params):
     for pid,pl in mud.players.items():
         if mud.players[pid]["room"] == mud.players[id]["room"]:
@@ -98,29 +106,29 @@ def cmd_look(mud, id, params):
                 playershere.append(str(mud.players[pid]["player"])[:1].upper() + str(mud.players[pid]["player"])[1:])
     mud.send_message(id, "Players here: {0}".format(", ".join(playershere)))
     mud.send_message(id, "Exits are: {0}".format(", ".join(rm["exits"])))
-                
+
 def cmd_go(mud, id, params):
     ex = params.lower()
     rm = rooms[mud.players[id]["room"]]
-    
+
     if ex in rm["exits"]:
         for pid,pl in mud.players.items():
             if mud.players[pid]["room"] == mud.players[id]["room"] and pid!=id:
                 mud.send_message(pid,"{0} left via exit '{1}'".format(
                     str(mud.players[id]["player"])[:1].upper() + str(mud.players[id]["player"])[1:],
                     ex))
-                
+
         mud.players[id]["room"] = rm["exits"][ex]
         rm = rooms[mud.players[id]["room"]]
-        
+
         for pid,pl in mud.players.items():
             if mud.players[pid]["room"] == mud.players[id]["room"] and pid!=id:
                 mud.send_message(pid,"{0} arrived via exit '{1}'".format(
                     str(mud.players[pid]["player"])[:1].upper() + str(mud.players[pid]["player"])[1:],
                     ex))
-                
+
         mud.send_message(id,"You arrive at '{0}'".format(rooms[mud.players[id]["room"]]["name"]))
         cmd_look(mud, id, params)
-        
+
     else:
         mud.send_message(id, "Unknown exit '{0}'".format(ex))
