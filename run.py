@@ -1,12 +1,12 @@
-from systems.mudserver import MudServer
-from systems.gameloop import gameloop
+from twisted.application import internet, service
+from twisted.internet import task, reactor
+from systems.mudserver import MudServerFactory
 
+port = 8080
+application = service.Application('MudServer')
+factory = MudServerFactory()
+mudService = internet.TCPServer(port,factory)
+mudService.setServiceParent(application)
 
-def run_server():
-    mud = MudServer()
-    while True:
-        gameloop(mud)
-
-
-if __name__ == "__main__":
-    run_server()
+gameloop = task.LoopingCall(factory.update)
+gameloop.start(.20)

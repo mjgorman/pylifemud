@@ -4,7 +4,8 @@ class Character(object):
     def __init__(self, name, load=False):
         self.name = name
         self.password = ""
-        self.sex = 'Male'
+        self.sex = None
+        self.actions = 1
         self.understanding = 0
         self.diligence = 0
         self.courage = 0

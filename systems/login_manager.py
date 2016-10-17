@@ -1,56 +1,83 @@
 import yaml
-from models import Character
+from systems.models import Character
 from areas import rooms
 from passlib.hash import sha256_crypt
 
 
-def login_manager(mud, id, command, params):
-    if mud.players[id]["state"] == "LOGIN":
+def login_manager(player, command):
+    players = player.factory.players
+    player_status = players[player.id]
+    if player_status["state"] == "LOGIN_NAME":
         if len(command) < 3:
-            mud.send_message(id, "Please choose a name of at least 3 characters")
+            player.send("Please choose a name of at least 3 characters")
         else:
-            try:
-                with open("save/{0}".format(command), "r") as load_player:
-                    loaded_player = yaml.load(load_player.read())
-                    mud.players[id]["player"] = command
-                    mud.players[id]["state"] = "LOGIN_PASSWORD"
-            except Exception as e:
-                mud.players[id]["player"] = Character(command)
-                mud.players[id]["state"] = "CREATION_PASS1"
-            finally:
-                mud.send_message(id,"Great. what's your password? ")
-                mud.send_prompt(id)
+            player.send("{0}, is that right? (y/n)".format(command))
+            player_status["player"] = command
+            player_status["state"] = "LOGIN_CONFIRM"
 
-    elif mud.players[id]["state"] == "LOGIN_PASSWORD":
-        with open("save/{0}".format(mud.players[id]["player"]), "r") as load_player:
+
+    elif player_status["state"] == "LOGIN_CONFIRM":
+        if command == "y":
+            try:
+                with open("save/{0}".format(player_status["player"]), "r") as load_player:
+                    loaded_player = yaml.load(load_player.read())
+                    player_status["state"] = "LOGIN_PASSWORD"
+            except Exception as e:
+                player_status["player"] = Character(player_status["player"])
+                player_status["state"] = "CREATION_PASS1"
+            finally:
+                player.send("Great. what's your password? ")
+        else:
+            player.send("No? Okay what name would you like then?")
+            player_status["state"] = "LOGIN_NAME"
+
+
+
+    elif player_status["state"] == "LOGIN_PASSWORD":
+        with open("save/{0}".format(player_status["player"]), "r") as load_player:
             loaded_player = yaml.load(load_player.read())
         if sha256_crypt.verify("{0}".format(command), loaded_player["password"]):
-            mud.players[id]["player"] = Character(loaded_player["name"], load=True)
-            mud.players[id]["player"].password = loaded_player["password"]
-            mud.players[id]["player"].sex = loaded_player["sex"]
-            mud.players[id]["player"].height = loaded_player["height"]
-            mud.players[id]["player"].weight = loaded_player["weight"]
-            mud.players[id]["player"].understanding = loaded_player["understanding"]
-            mud.players[id]["player"].courage = loaded_player["courage"]
-            mud.players[id]["player"].diligence = loaded_player["diligence"]
-            mud.players[id]["player"].knowledge = loaded_player["knowledge"]
-            mud.players[id]["player"].expression = loaded_player["expression"]
-            mud.players[id]["state"] = "ONLINE"
-            mud.send_message(id,"Welcome back!")
-            mud.send_message(id,rooms[mud.players[id]["room"]]["description"])
-            mud.send_prompt(id)
+            player_status["player"] = Character(loaded_player["name"], load=True)
+            player_status["player"].password = loaded_player["password"]
+            player_status["player"].sex = loaded_player["sex"]
+            player_status["player"].height = loaded_player["height"]
+            player_status["player"].weight = loaded_player["weight"]
+            player_status["player"].understanding = loaded_player["understanding"]
+            player_status["player"].courage = loaded_player["courage"]
+            player_status["player"].diligence = loaded_player["diligence"]
+            player_status["player"].knowledge = loaded_player["knowledge"]
+            player_status["player"].expression = loaded_player["expression"]
+            player_status["player"].actions = loaded_player["actions"]
+            player_status["state"] = "ONLINE"
+            for id, pl in players.items():
+                if player is not id:
+                    pl['con'].send("\r\n{0} entered the game".format(player_status["player"]))
+            player.send("Welcome back!")
+            player.send(rooms[player_status["room"]]["description"])
         else:
-            mud.send_message(id,"Incorrect Password.")
-            mud.send_prompt(id)
+            player.send("Incorrect Password.")
 
-    elif mud.players[id]["state"] == "CREATION_PASS1":
-        mud.players[id]["player"].password = sha256_crypt.encrypt("{0}".format(command))
-        mud.players[id]["state"] = "ONLINE"
+    elif player_status["state"] == "CREATION_PASS1":
+        player_status["player"].password = sha256_crypt.encrypt("{0}".format(command))
+        player_status["state"] = "CREATION_SEX"
+        player.send("Are you a Male or Female?")
+        print("User: {0} Client: {1} Host: {2}".format(player_status["player"],
+                                                       player_status["con"].transport.sessionno,
+                                                       player_status["con"].transport.hostname))
 
-        for pid,pl in mud.players.items():
-            if pid is not id:
-                mud.send_message(pid,"\n\r{0} entered the game".format(mud.players[id]["player"]))
-                mud.send_prompt(id)
+    elif player_status["state"] == "CREATION_SEX":
+        if command in ["male", "m"]:
+            player_status["player"].sex = "Male"
+        elif command in ["female", "f"]:
+            player_status["player"].sex = "Female"
+        else:
+            player.send("Are you a Male or Female?")
+            return
 
-        mud.send_message(id,"\n\rWelcome to the game, {0}. Type 'help' for a list of commands. Have fun!".format(
-            str(mud.players[pid]["player"])[:1].upper() + str(mud.players[pid]["player"])[1:]))
+        player_status["state"] = "ONLINE"
+        for id, pl in players.items():
+            if player is not id:
+                pl['con'].send("\r\n{0} entered the game".format(player_status["player"]))
+
+        player.send("\n\rWelcome to the game, {0}. Type 'help' for a list of commands. Have fun!".format(
+            str(player_status["player"])[:1].upper() + str(player_status["player"])[1:]))
