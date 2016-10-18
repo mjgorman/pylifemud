@@ -9,4 +9,4 @@ mudService = internet.TCPServer(port,factory)
 mudService.setServiceParent(application)
 
 gameloop = task.LoopingCall(factory.update)
-gameloop.start(.20)
+gameloop.start(.06)

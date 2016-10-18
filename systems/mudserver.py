@@ -94,7 +94,7 @@ class MudServerFactory(Factory):
         with open('save/mud.time', 'w') as mudtime:
             yaml.dump(self.mudtime, mudtime, default_flow_style=True)
 
-        if self.mudtime.hour % 4 == 0 and self.mudtime.second == 0:
+        if self.mudtime.hour % 4 == 0 and self.mudtime.minute == 0 and self.mudtime.second == 0:
             for id, pl in self.players.items():
                 if pl["state"] == "ONLINE":
                     pl["con"].send("The Time of day has advanced\r\n")
